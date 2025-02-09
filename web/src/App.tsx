@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import Sidebar from './components/sidebar/sidebar'
-import { FileWarning, LogOut, Settings } from 'lucide-react'
+import { FileWarning, LogOut, MessageCircleMore, Settings } from 'lucide-react'
+import Chat from './components/chat/chat'
 
 function App() {
-  const [selectedOption, setSelectedOption] = useState('reports')
+  const [selectedOption, setSelectedOption] = useState('chat')
   const options = [
+    {
+      id: "chat",
+      name: "Chat",
+      icon: (<MessageCircleMore />),
+    },
     {
       id: "reports",
       name: "Reports",
@@ -28,7 +34,8 @@ function App() {
     <div className='dark'>
       <div className='flex flex-row bg-background text-primary absolute rounded-md' style={{ width: 1280, height: 720, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
         <Sidebar options={options} selectedOption={changeOption} />
-        <div className='flex flex-col flex-1 p-2'>
+        <div className='flex flex-col p-2 w-full h-full'>
+          {selectedOption === 'chat' && <Chat />}
         </div>
       </div>
     </div>

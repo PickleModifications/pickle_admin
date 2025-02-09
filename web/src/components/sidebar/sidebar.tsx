@@ -7,7 +7,7 @@ export default function Sidebar({options, selectedOption} : {options: {id: strin
             {options.map((option) => (
                 <div onClick={()=>selectedOption(option.id)} className="flex flex-col items-center w-12 h-12 justify-center cursor-pointer hover:bg-secondary rounded-md transition-colors duration-200 relative group">
                     {option.icon}
-                    <div className="absolute left-16 top-1/2 transform -translate-y-1/2 select-none pointer-events-none opacity-0 group-hover:opacity-100 bg-secondary text-white text-xs rounded-md px-2 py-1 transition-opacity duration-200">
+                    <div className="absolute left-16 top-1/2 transform -translate-y-1/2 select-none pointer-events-none opacity-0 group-hover:opacity-100 bg-secondary text-xs rounded-md px-2 py-1 transition-opacity duration-200">
                         {option.name}
                     </div>
                 </div>
