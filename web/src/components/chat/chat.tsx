@@ -2,14 +2,10 @@ import { useState } from "react";
 import { useEffect, useRef } from "react";
 import { Input } from "../ui/input";
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { User } from "@/App";
 
 export type ChatMessage = {
-    user: {
-        identifier: string;
-        name: string;
-        role: string;
-        image: string;
-    },
+    user: User;
     datetime: number;
     message: string;
 }
@@ -104,7 +100,7 @@ function CreateDebugMessage(identifier?: string): ChatMessage {
     }
 }
 
-export default function Chat() {
+export function ChatChannel({ channel }: { channel: string }) {
     const user = {
         identifier: "char-debug",
         name: "Pickle Mods",
@@ -134,12 +130,8 @@ export default function Chat() {
         }
         setMessages(debugMessages);
     }
-
     return (
-        <div className="flex flex-col w-full h-full rounded-md">
-            <div className="flex items-center w-full h-16 p-2 border-1 rounded-tr-md rounded-tl-md">
-                <div className="font-bold text-lg">Staff Chat</div>
-            </div>
+        <div className="flex flex-col h-full">
             <Virtuoso
                 ref={virtuoso}
                 initialTopMostItemIndex={messages.length - 1}
@@ -183,5 +175,14 @@ export default function Chat() {
                 />
             </div>
         </div>
+    )
+}
+
+export default function Chat() {
+    return (
+        <>
+            <div className="font-bold px-2 pb-2 border-b-1 text-2xl">Staff Chat</div>
+            <ChatChannel channel={"staff"} />
+        </>
     )
 }
