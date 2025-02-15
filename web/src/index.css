@@ -4,6 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html {
+  color-scheme: normal !important;
+}
+
+:root,  body {
+  background: none !important;
+  /* background-image: url("assets/heist_background.png") !important; */
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(240 10% 3.9%);

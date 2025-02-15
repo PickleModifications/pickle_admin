@@ -1,6 +1,10 @@
 import { User } from "@/App";
 import { useState } from "react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTrigger } from "../ui/dialog";
+import { MessageCircleMore, Plus } from "lucide-react";
+import { ChatChannel } from "../chat/chat";
 
 type Report = {
     id: string;
@@ -34,7 +38,7 @@ export default function Reports() {
     const [reports, setReports] = useState<Report[]>([]);
     if (reports.length === 0) {
         let newReports = [];
-        for (let i = 0; i < 200; i++) {
+        for (let i = 0; i < 10; i++) {
             newReports.push(CreateDebugReport());
         }
         setReports(newReports);
@@ -44,7 +48,7 @@ export default function Reports() {
             <div className="font-bold px-2 pb-2 border-b-1 text-2xl">Reports</div>
             <div className="flex flex-col px-2 gap-2 pt-2 h-full">
                 <div className="font-bold  pb-2 text-xl">Active Reports</div>
-                <Table tableHeight={250}>
+                <Table tableHeight={500}>
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[100px]">Report ID</TableHead>
@@ -69,12 +73,39 @@ export default function Reports() {
                                 </TableCell>
                                 <TableCell>{new Date(report.datetime).toLocaleString()}</TableCell>
                                 <TableCell>
-                                    <button className="text-primary">View</button>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant={"secondary"}><MessageCircleMore/> Chat</Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>Report #{report.id}</DialogHeader>
+                                            <DialogDescription>
+                                                <div style={{ height: 500, width: 700}}>
+                                                    <ChatChannel channel={report.id}/>
+                                                </div>
+                                            </DialogDescription>
+                                            <DialogFooter>
+                                                <Button variant={"destructive"}>Close Report</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant={"secondary"}><Plus/> Create Report</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>Dialog Title</DialogHeader>
+                        <DialogDescription>Dialog Description</DialogDescription>
+                        <DialogFooter>
+                            <Button>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </>
     )

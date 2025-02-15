@@ -3,8 +3,11 @@ import { useEffect, useRef } from "react";
 import { Input } from "../ui/input";
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { User } from "@/App";
+import { fetchNui } from "@/providers/nui/fetchNui";
+import { useNuiEvent } from "@/providers/nui/useNui";
 
 export type ChatMessage = {
+    id: number;
     user: User;
     datetime: number;
     message: string;
@@ -19,7 +22,20 @@ function Embed({ width, height, src, frameBorder, allowFullScreen }: { width: nu
     );
 }
 
-function GetFormattedContent({ content }: { content: string }) {
+function GetContentType(content: string): "medal" | "youtube" | "twitch" | "text" {
+    if (content.includes("medal.tv/")) {
+        return "medal";
+    }
+    else if (content.includes("youtube.com/") || content.includes("youtu.be/")) {
+        return "youtube";
+    }
+    else if (content.includes("twitch.tv/")) {
+        return "twitch";
+    }
+    return "text";
+}
+
+function GetFormattedContent({ content, embedWidth = 400, embedHeight = 225, isUser = false }: { content: string, embedWidth?: number, embedHeight?: number, isUser?: boolean }) {
     if (content.includes("medal.tv/")) {
         let path = content.split("/");
         let idA = "";
@@ -34,7 +50,7 @@ function GetFormattedContent({ content }: { content: string }) {
             }
         }
         return (
-            <Embed width={1280 / 3} height={720 / 3} src={`https://medal.tv/clip/${idA}/${idB}?invite=${invite}`} frameBorder="0" allowFullScreen></Embed>
+            <Embed width={embedWidth} height={embedHeight} src={`https://medal.tv/clip/${idA}/${idB}?invite=${invite}`} frameBorder="0" allowFullScreen></Embed>
         );
     }
     else if (content.includes("youtube.com/") || content.includes("youtu.be/")) {
@@ -52,7 +68,7 @@ function GetFormattedContent({ content }: { content: string }) {
             }
         }
         return (
-            <Embed width={1280 / 3} height={720 / 3} src={`https://www.youtube.com/embed/${id}`} frameBorder="0" allowFullScreen></Embed>
+            <Embed width={embedWidth} height={embedHeight} src={`https://www.youtube.com/embed/${id}`} frameBorder="0" allowFullScreen></Embed>
         );
     }
     else if (content.includes("twitch.tv/")) {
@@ -70,15 +86,15 @@ function GetFormattedContent({ content }: { content: string }) {
         }
         if (clip) {
             return (
-                <Embed width={1280 / 3} height={720 / 3} src={`https://clips.twitch.tv/embed?clip=${clip}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
+                <Embed width={embedWidth} height={embedHeight} src={`https://clips.twitch.tv/embed?clip=${clip}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
             );
         } else {
             return (
-                <Embed width={1280 / 3} height={720 / 3} src={`https://player.twitch.tv/?channel=${channel}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
+                <Embed width={embedWidth} height={embedHeight} src={`https://player.twitch.tv/?channel=${channel}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
             );
         }
     }
-    return content;
+    return <div className={"text-foreground" + (isUser ? " text-right" : "")}>{content}</div>;
 }
 
 function CreateDebugMessage(identifier?: string): ChatMessage {
@@ -89,6 +105,7 @@ function CreateDebugMessage(identifier?: string): ChatMessage {
         "I'm a bot, please ask me anything.",
     ];
     return {
+        id: Math.floor(Math.random() * 100000),
         user: {
             identifier: identifier || Math.random().toString(36).substring(2, 15),
             name: identifier ? "Pickle Mods" : fakeNames[Math.floor(Math.random() * fakeNames.length)],
@@ -100,7 +117,19 @@ function CreateDebugMessage(identifier?: string): ChatMessage {
     }
 }
 
-export function ChatChannel({ channel }: { channel: string }) {
+async function FetchChannelMessages(channel: string) {
+    return new Promise<ChatMessage[]>((resolve) => {
+        setTimeout(() => {
+            let newMessages = [];
+            for (let i = 0; i < 10; i++) {
+                newMessages.push(CreateDebugMessage());
+            }
+            resolve(newMessages);
+        }, 10);
+    });
+}
+
+export function ChatChannel({ channel, embedWidth = 400, embedHeight = 225 }: { channel: string, embedWidth?: number, embedHeight?: number }) {
     const user = {
         identifier: "char-debug",
         name: "Pickle Mods",
@@ -117,58 +146,55 @@ export function ChatChannel({ channel }: { channel: string }) {
                 virtuoso.current.scrollToIndex({
                     index: messages.length - 1,
                     align: 'end', // Scroll to the end of the list to show the latest message
-                    behavior: typeof GetFormattedContent({content: messages[messages.length - 1].message}) == "string" ? 'smooth' : 'auto',
+                    behavior: GetContentType(messages[messages.length - 1].message) == "text" ? 'smooth' : 'auto',
                 })
             }
         }, 100);
     }, [messages]);
-
-    if (messages.length === 0) {
-        let debugMessages: ChatMessage[] = [];
-        for (let i = 0; i < 1000; i++) {
-            debugMessages.push(CreateDebugMessage());
-        }
-        setMessages(debugMessages);
-    }
+    useEffect(() => {
+        console.log("Fetching messages for the first time");
+        FetchChannelMessages(channel).then((newMessages) => {
+            setMessages(newMessages);
+        });
+    }, []);
+    useNuiEvent("receiveChannelMessage", (data) => {
+        const channel = data.channel;
+        const message = data.message;
+        console.log("Received a message", channel, message);
+        setMessages((prevMessages) => [...prevMessages, message]);
+    });
     return (
         <div className="flex flex-col h-full">
             <Virtuoso
                 ref={virtuoso}
                 initialTopMostItemIndex={messages.length - 1}
-                className="flex flex-col gap-2 p-2 border-l-1 border-r-1 h-full overflow-y-auto overflow-x-hidden"
+                className="flex flex-col gap-2 p-2 border-l-1 border-t-1 border-r-1 h-full overflow-y-auto overflow-x-hidden"
                 totalCount={messages.length}
                 itemContent={(index) => {
                     const message = messages[index];
                     return (
                         <div key={index} className={`flex gap-2 p-2 rounded-md ${message.user.identifier === user.identifier ? 'justify-end' : ''}`}>
-                            {message.user.identifier !== user.identifier && (
-                                <img className="w-8 h-8 rounded-full" src={message.user.image} alt="User Profile" />
-                            )}
-                            <div className="flex flex-col bg-secondary p-2 rounded-md">
-                                {message.user.identifier !== user.identifier && (<div className="font-bold">{message.user.name}</div>)}
-                                <GetFormattedContent content={message.message} />
+                            {message.user.identifier !== user.identifier && (<img src={message.user.image} alt={message.user.name} className="w-8 h-8 rounded-full" />)}
+                            <div className={"flex flex-col" + (message.user.identifier === user.identifier ? ' items-end' : '')}>
+                                {message.user.identifier !== user.identifier && (<div className="font-bold text-primary">{message.user.name}</div>)}
+                                <div className="bg-secondary p-2 rounded-md">
+                                    <GetFormattedContent isUser={message.user.identifier == user.identifier} embedWidth={embedWidth} embedHeight={embedHeight} content={message.message} />
+                                </div>
+                                <div className={"text-xs text-muted-foreground" + (GetContentType(message.message) != "text" ? " pt-2" : " pt-1" )}>{new Date(message.datetime).toLocaleString()}</div>
                             </div>
-                            {message.user.identifier === user.identifier && (
-                                <img className="w-8 h-8 rounded-full" src={message.user.image} alt="User Profile" />
-                            )}
                         </div>
                     );
                 }}
             />
             <div ref={messagesEndRef} />
-            <div className="flex items-center w-full h-16 p-2 border-1 rounded-br-md rounded-bl-md">
+            <div className="flex items-center w-full h-16 p-2 border-1">
                 <Input
                     type="text"
                     placeholder="Type a message..."
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             const input = e.target as HTMLInputElement;
-                            const newMessage: ChatMessage = {
-                                user: user,
-                                datetime: Date.now(),
-                                message: input.value,
-                            };
-                            setMessages([...messages, newMessage]);
+                            fetchNui("sendChannelMessage", { channel: channel, message: input.value });
                             input.value = '';
                         }
                     }}
@@ -181,7 +207,7 @@ export function ChatChannel({ channel }: { channel: string }) {
 export default function Chat() {
     return (
         <>
-            <div className="font-bold px-2 pb-2 border-b-1 text-2xl">Staff Chat</div>
+            <div className="font-bold px-2 pb-2 text-2xl">Staff Chat</div>
             <ChatChannel channel={"staff"} />
         </>
     )
