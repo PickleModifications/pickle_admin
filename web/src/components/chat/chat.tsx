@@ -5,6 +5,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { User } from "@/App";
 import { fetchNui } from "@/providers/nui/fetchNui";
 import { useNuiEvent } from "@/providers/nui/useNui";
+import { Config, useConfig } from "@/providers/config";
 
 export type ChatMessage = {
     id: number;
@@ -14,9 +15,15 @@ export type ChatMessage = {
 }
 
 function Embed({ width, height, src, frameBorder, allowFullScreen }: { width: number, height: number, src: string, frameBorder: string, allowFullScreen: any }) {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    useEffect(() => {
+        if (iframeRef.current) {
+            iframeRef.current.src = src;
+        }
+    }, []);
     return (
         <div style={{ position: 'relative' }}>
-            <iframe width={width} height={height} src={src} frameBorder={frameBorder} allowFullScreen={allowFullScreen} style={{ position: "relative", zIndex: 1 }}></iframe>
+            <iframe ref={iframeRef} width={width} height={height} frameBorder={frameBorder} allowFullScreen={allowFullScreen} style={{ position: "relative", zIndex: 1 }}></iframe>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'gray', fontSize: '1.5rem', zIndex: 0 }}>Loading...</div>
         </div>
     );
@@ -36,24 +43,7 @@ function GetContentType(content: string): "medal" | "youtube" | "twitch" | "text
 }
 
 function GetFormattedContent({ content, embedWidth = 400, embedHeight = 225, isUser = false }: { content: string, embedWidth?: number, embedHeight?: number, isUser?: boolean }) {
-    if (content.includes("medal.tv/")) {
-        let path = content.split("/");
-        let idA = "";
-        let idB = "";
-        let invite = "cr-vvvv";
-        for (let i = 0; i < path.length; i++) {
-            if (path[i] === "clips" || path[i] === "clip") {
-                idA = path[i + 1];
-                idB = path[i + 2];
-                invite = path[i + 3];
-                break;
-            }
-        }
-        return (
-            <Embed width={embedWidth} height={embedHeight} src={`https://medal.tv/clip/${idA}/${idB}?invite=${invite}`} frameBorder="0" allowFullScreen></Embed>
-        );
-    }
-    else if (content.includes("youtube.com/") || content.includes("youtu.be/")) {
+    if (content.includes("youtube.com/") || content.includes("youtu.be/")) {
         let path = content.split("/");
         let id = "";
         for (let i = 0; i < path.length; i++) {
@@ -71,30 +61,64 @@ function GetFormattedContent({ content, embedWidth = 400, embedHeight = 225, isU
             <Embed width={embedWidth} height={embedHeight} src={`https://www.youtube.com/embed/${id}`} frameBorder="0" allowFullScreen></Embed>
         );
     }
-    else if (content.includes("twitch.tv/")) {
-        let path = content.split("/");
-        let channel = "";
-        let clip = "";
-        for (let i = 0; i < path.length; i++) {
-            if (path[i].includes("twitch.tv")) {
-                channel = path[i + 1];
-                if (path[i + 3] && path[i + 2].includes("clip")) {
-                    clip = path[i + 3];
-                }
-                break;
-            }
-        }
-        if (clip) {
-            return (
-                <Embed width={embedWidth} height={embedHeight} src={`https://clips.twitch.tv/embed?clip=${clip}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
-            );
-        } else {
-            return (
-                <Embed width={embedWidth} height={embedHeight} src={`https://player.twitch.tv/?channel=${channel}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
-            );
-        }
-    }
-    return <div className={"text-foreground" + (isUser ? " text-right" : "")}>{content}</div>;
+    // PENDING: FiveM embed fix for ancestor iframes.
+    // else if (content.includes("medal.tv/")) {
+    //     let path = content.split("/");
+    //     let idA = "";
+    //     let idB = "";
+    //     let invite = "cr-vvvv";
+    //     for (let i = 0; i < path.length; i++) {
+    //         if (path[i] === "clips" || path[i] === "clip") {
+    //             idA = path[i + 1];
+    //             idB = path[i + 2];
+    //             invite = path[i + 3];
+    //             break;
+    //         }
+    //     }
+    //     return (
+    //         <Embed width={embedWidth} height={embedHeight} src={`https://medal.tv/clip/${idA}/${idB}?invite=${invite}`} frameBorder="0" allowFullScreen></Embed>
+    //     );
+    // }
+    // else if (content.includes("twitch.tv/")) {
+    //     let path = content.split("/");
+    //     let channel = "";
+    //     let clip = "";
+    //     for (let i = 0; i < path.length; i++) {
+    //         if (path[i].includes("twitch.tv")) {
+    //             channel = path[i + 1];
+    //             if (path[i + 3] && path[i + 2].includes("clip")) {
+    //                 clip = path[i + 3];
+    //             }
+    //             break;
+    //         }
+    //     }
+    //     if (clip) {
+    //         return (
+    //             <Embed width={embedWidth} height={embedHeight} src={`https://clips.twitch.tv/embed?clip=${clip}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
+    //         );
+    //     } else {
+    //         return (
+    //             <Embed width={embedWidth} height={embedHeight} src={`https://player.twitch.tv/?channel=${channel}&parent=localhost`} frameBorder="0" allowFullScreen></Embed>
+    //         );
+    //     }
+    // }
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    return (
+        <div className={"text-foreground" + (isUser ? " text-right" : "")}>
+            {parts.map((part, index) =>
+                urlRegex.test(part) ? (
+                    <div onClick={() => {
+                        (window as any).invokeNative('openUrl', part);
+                    }} key={index} className="cursor-pointer text-blue-500 underline">
+                        {part}
+                    </div>
+                ) : (
+                    part
+                )
+            )}
+        </div>
+    );
 }
 
 function CreateDebugMessage(identifier?: string): ChatMessage {
@@ -118,20 +142,28 @@ function CreateDebugMessage(identifier?: string): ChatMessage {
 }
 
 async function FetchChannelMessages(channel: string) {
-    return new Promise<ChatMessage[]>((resolve) => {
-        setTimeout(() => {
-            let newMessages = [];
-            for (let i = 0; i < 10; i++) {
-                newMessages.push(CreateDebugMessage());
-            }
-            resolve(newMessages);
-        }, 10);
-    });
+    if (process.env.NODE_ENV === 'development') {
+        return new Promise<ChatMessage[]>((resolve) => {
+            setTimeout(() => {
+                let newMessages = [];
+                for (let i = 0; i < 10; i++) {
+                    newMessages.push(CreateDebugMessage());
+                }
+                resolve(newMessages);
+            }, 10);
+        });
+    }
+    else {
+        return fetchNui("fetchChannelMessages", { channel: channel });
+    }
 }
 
 export function ChatChannel({ channel, embedWidth = 400, embedHeight = 225 }: { channel: string, embedWidth?: number, embedHeight?: number }) {
+    const { config } = useConfig();
+    const [configState, setConfigState] = useState<Config>({ identifier: "ERR_NO_IDENTIFIER" });
+    useEffect(() => { setConfigState(config); }, [config]);
     const user = {
-        identifier: "char-debug",
+        identifier: configState.identifier,
         name: "Pickle Mods",
         role: "Staff",
         image: `https://picklemods.com/logo_1.png`,
@@ -154,38 +186,43 @@ export function ChatChannel({ channel, embedWidth = 400, embedHeight = 225 }: { 
     useEffect(() => {
         console.log("Fetching messages for the first time");
         FetchChannelMessages(channel).then((newMessages) => {
-            setMessages(newMessages);
+            setMessages(newMessages as ChatMessage[]);
         });
     }, []);
     useNuiEvent("receiveChannelMessage", (data) => {
-        const channel = data.channel;
+        const targetChannel = data.channel;
         const message = data.message;
+        if (targetChannel !== channel) return;
         console.log("Received a message", channel, message);
         setMessages((prevMessages) => [...prevMessages, message]);
     });
     return (
         <div className="flex flex-col h-full">
-            <Virtuoso
-                ref={virtuoso}
-                initialTopMostItemIndex={messages.length - 1}
-                className="flex flex-col gap-2 p-2 border-l-1 border-t-1 border-r-1 h-full overflow-y-auto overflow-x-hidden"
-                totalCount={messages.length}
-                itemContent={(index) => {
-                    const message = messages[index];
-                    return (
-                        <div key={index} className={`flex gap-2 p-2 rounded-md ${message.user.identifier === user.identifier ? 'justify-end' : ''}`}>
-                            {message.user.identifier !== user.identifier && (<img src={message.user.image} alt={message.user.name} className="w-8 h-8 rounded-full" />)}
-                            <div className={"flex flex-col" + (message.user.identifier === user.identifier ? ' items-end' : '')}>
-                                {message.user.identifier !== user.identifier && (<div className="font-bold text-primary">{message.user.name}</div>)}
-                                <div className="bg-secondary p-2 rounded-md">
-                                    <GetFormattedContent isUser={message.user.identifier == user.identifier} embedWidth={embedWidth} embedHeight={embedHeight} content={message.message} />
+            {messages.length < 1 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No chat history yet.</div>
+            ) : (
+                <Virtuoso
+                    ref={virtuoso}
+                    initialTopMostItemIndex={messages.length - 1}
+                    className="flex flex-col gap-2 p-2 border-l-1 border-t-1 border-r-1 h-full overflow-y-auto overflow-x-hidden"
+                    totalCount={messages.length}
+                    itemContent={(index) => {
+                        const message = messages[index];
+                        return message && (
+                            <div key={index} className={`flex gap-2 p-2 rounded-md ${message.user.identifier === user.identifier ? 'justify-end pr-6' : ''}`}>
+                                {message.user.identifier !== user.identifier && (<img src={message.user.image} alt={message.user.name} className="w-8 h-8 rounded-full" />)}
+                                <div className={"flex flex-col" + (message.user.identifier === user.identifier ? ' items-end' : '')}>
+                                    {message.user.identifier !== user.identifier && (<div className="font-bold text-primary">{message.user.name}</div>)}
+                                    <div className="bg-secondary p-2 rounded-md">
+                                        <GetFormattedContent isUser={message.user.identifier == user.identifier} embedWidth={embedWidth} embedHeight={embedHeight} content={message.message} />
+                                    </div>
+                                    <div className={"text-xs text-muted-foreground" + (GetContentType(message.message) != "text" ? " pt-2" : " pt-1" )}>{new Date(message.datetime * 1000).toLocaleString()}</div>
                                 </div>
-                                <div className={"text-xs text-muted-foreground" + (GetContentType(message.message) != "text" ? " pt-2" : " pt-1" )}>{new Date(message.datetime).toLocaleString()}</div>
                             </div>
-                        </div>
-                    );
-                }}
-            />
+                        );
+                    }}
+                />
+            )}
             <div ref={messagesEndRef} />
             <div className="flex items-center w-full h-16 p-2 border-1">
                 <Input
