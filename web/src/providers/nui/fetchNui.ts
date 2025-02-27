@@ -1,7 +1,7 @@
 export async function fetchNui<T = unknown>(
     eventName: string,
     data?: unknown,
-    // mockData?: T,
+    mockData?: T,
   ): Promise<T> {
     const options = {
       method: "post",
@@ -15,9 +15,14 @@ export async function fetchNui<T = unknown>(
       ? (window as any).GetParentResourceName()
       : "nui-frame-app";
   
-    const resp = await fetch(`https://${resourceName}/${eventName}`, options);
-  
-    const respFormatted = await resp.json();
-  
-    return respFormatted;
+
+    if (process.env.NODE_ENV === 'development') {
+      window.postMessage({ eventName, data }, "*");
+      return mockData as T;
+    }
+    else {
+      const resp = await fetch(`https://${resourceName}/${eventName}`, options)
+      const respFormatted = await resp.json();
+      return respFormatted;
+    }
 }

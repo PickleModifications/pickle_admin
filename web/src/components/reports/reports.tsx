@@ -22,7 +22,7 @@ function CreateDebugReport(identifier?: string): Report {
         "I'm a bot, please ask me anything.",
     ];
     return {
-        id: "report-" + Math.random().toString(36).substring(2, 15),
+        id: Math.ceil(Math.random() * 1000) + "",
         title: "Report #" + Math.random().toString(36).substring(2, 15),
         user: {
             identifier: identifier || Math.random().toString(36).substring(2, 15),
@@ -53,9 +53,6 @@ export default function Reports() {
                         <TableRow>
                             <TableHead className="w-[100px]">Report ID</TableHead>
                             <TableHead>Title</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead>Time</TableHead>
                             <TableHead></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -63,15 +60,7 @@ export default function Reports() {
                         {reports.map((report) => (
                             <TableRow key={report.id}>
                                 <TableCell>{report.id}</TableCell>
-                                <TableCell>{report.title}</TableCell>
-                                <TableCell>{report.description}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <img src={report.user.image} alt={report.user.name} className="w-8 h-8 rounded-full" />
-                                        <div>{report.user.name}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{new Date(report.datetime).toLocaleString()}</TableCell>
+                                <TableCell className="truncate">{report.title}</TableCell>
                                 <TableCell>
                                     <Dialog>
                                         <DialogTrigger asChild>
@@ -80,7 +69,7 @@ export default function Reports() {
                                         <DialogContent>
                                             <DialogHeader>Report #{report.id}</DialogHeader>
                                             <DialogDescription>
-                                                <div style={{ height: 500, width: 700}}>
+                                                <div style={{ height: 500, width: 500}}>
                                                     <ChatChannel channel={report.id}/>
                                                 </div>
                                             </DialogDescription>

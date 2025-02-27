@@ -136,7 +136,7 @@ function CreateDebugMessage(identifier?: string): ChatMessage {
             role: "Staff",
             image: `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 25)}.jpg`,
         },
-        datetime: Date.now(),
+        datetime: Date.now() / 1000,
         message: fakeMessages[Math.floor(Math.random() * fakeMessages.length)],
     }
 }
@@ -173,7 +173,7 @@ export function ChatChannel({ channel, embedWidth = 400, embedHeight = 225 }: { 
     const virtuoso = useRef<VirtuosoHandle>(null);
     useEffect(() => {
         setTimeout(() => {
-            if (virtuoso.current) {
+            if (virtuoso.current && messages.length > 0) {
                 console.log("Scrolling to the end of the list");
                 virtuoso.current.scrollToIndex({
                     index: messages.length - 1,
