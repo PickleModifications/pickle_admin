@@ -46,7 +46,7 @@ function App() {
   }
   return (
     <div className="dark w-screen h-screen absolute top-0 left-0" style={{ backgroundImage: 'url(/nui/images/background.png)' }}>
-      <div className='flex flex-row bg-background/95 text-primary absolute rounded-md mr-4' style={{ width: 600, height: 900, top: '50%', right: '0', transform: 'translate(0, -50%)' }}>
+      <div className='flex flex-row bg-background/95 text-primary absolute rounded-md mr-4' style={{ width: 600, height: 900, top: '50%', left: '0', transform: 'translate(0, -50%)' }}>
         <Sidebar options={options} selectedOption={changeOption} />
         <div className='flex flex-col p-2 w-full h-full'>
           {selectedOption === 'chat' && <Chat />}

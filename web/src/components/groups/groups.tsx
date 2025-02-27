@@ -63,7 +63,7 @@ function DraggableGroup({ group, index, moveGroup }: { group: Group; index: numb
     drag(drop(ref));
 
     return (
-        <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="group-item">
+        <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }} className="p-2 bg-secondary rounded-md">
             {group.label}
         </div>
     );
@@ -102,9 +102,11 @@ export default function Groups() {
     return (
         <DndProvider backend={HTML5Backend}>
             <div className="font-bold px-2 pb-2 border-b-1 text-2xl">Groups</div>
-            {groups.map((group, index) => (
-                <DraggableGroup key={group.id} index={index} group={group} moveGroup={moveGroup} />
-            ))}
+            <div className="flex flex-col gap-2 p-2">
+                {groups.map((group, index) => (
+                    <DraggableGroup key={group.id} index={index} group={group} moveGroup={moveGroup} />
+                ))}
+            </div>
         </DndProvider>
     );
 }
