@@ -160,7 +160,7 @@ async function FetchChannelMessages(channel: string) {
 
 export function ChatChannel({ channel, embedWidth = 400, embedHeight = 225 }: { channel: string, embedWidth?: number, embedHeight?: number }) {
     const { config } = useConfig();
-    const [configState, setConfigState] = useState<Config>({ identifier: "ERR_NO_IDENTIFIER" });
+    const [configState, setConfigState] = useState<Config>(config);
     useEffect(() => { setConfigState(config); }, [config]);
     const user = {
         identifier: configState.identifier,
