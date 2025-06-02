@@ -106,9 +106,22 @@ export function GroupDisplay({ group }: { group: Group | null }) {
         <>
             <DialogHeader>
                 <div className="flex flex-row items-center gap-2" >
-                    {group == null && <Edit onClick={()=>{
-                        setEditingLabel(true);
-                    }} size={16}/> }
+                    {editingLabel ? (
+                        <SaveIcon size={16} onClick={()=> {
+                            setEditingLabel(false);
+                            if (group) {
+                                fetchNui("updateGroupSetting", {
+                                    id: group.id,
+                                    settingId: "label",
+                                    value: label,
+                                });
+                            }
+                        }} />
+                    ) : (
+                        <Edit onClick={()=>{
+                            setEditingLabel(true);
+                        }} size={16}/>
+                    )}
                     {!editingLabel ? (
                         label
                     ) : (
@@ -150,6 +163,11 @@ export function GroupDisplay({ group }: { group: Group | null }) {
                 <div className="grid grid-cols-3 gap-2 max-h-[150px] overflow-y-auto">
                     {config.permissions.map((permission) => (
                         <div key={permission.id} className="flex items-center gap-2" onClick={() => {
+                            if (permissions.includes(permission.id)) {
+                                setPermissions(permissions.filter((p) => p !== permission.id));
+                            } else {
+                                setPermissions([...permissions, permission.id]);
+                            }
                         }}>
                             <input
                                 type="checkbox"
@@ -213,26 +231,34 @@ export default function Groups() {
             <div className="font-bold px-2 pb-2 border-b-1 text-2xl">Groups</div>
             <div className="flex flex-col gap-2 p-2">
                 {groups.map((group, index) => (
-                    <DraggableGroup key={group.id} index={index} group={group}>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <div className="flex justify-between items-center gap-2 p-2 bg-secondary rounded-md hover:bg-secondary/70">
-                                    <div className="flex items-center gap-2">
-                                        <MenuIcon size={24} />
-                                        <div>{group.label}</div>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <User2 size={16} />
-                                        <GroupMemberCount groupId={group.id} />
-                                    </div>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <div className="flex justify-between items-center gap-2 p-2 bg-secondary rounded-md hover:bg-secondary/70 cursor-pointer select-none">
+                                <div className="flex items-center gap-2">
+                                    <div>{group.label}</div>
                                 </div>
-                            </DialogTrigger>
-                            <DialogContent className="select-none">
-                                <GroupDisplay group={null} />
-                            </DialogContent>
-                        </Dialog>
-                    </DraggableGroup>
+                                <div className="flex items-center gap-1">
+                                    <User2 size={16} />
+                                    <GroupMemberCount groupId={group.id} />
+                                </div>
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="select-none">
+                            <GroupDisplay group={group} />
+                        </DialogContent>
+                    </Dialog>
                 ))}
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary" className="w-full">
+                            <PlusIcon className="mr-2" />
+                            Add New Group
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="select-none">
+                        <GroupDisplay group={null} />
+                    </DialogContent>
+                </Dialog>
             </div>
         </DndProvider>
     );

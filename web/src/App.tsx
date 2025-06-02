@@ -4,6 +4,7 @@ import { FileWarning, GroupIcon, LogOut, LucideUser2, MessageCircleMore, Setting
 import Chat from './components/chat/chat'
 import Reports from './components/reports/reports'
 import Groups from './components/groups/groups'
+import { Translate } from './providers/locale/Locale'
 
 export type User = {
   identifier: string;
@@ -17,28 +18,23 @@ function App() {
   const options = [
     {
       id: "chat",
-      name: "Chat",
+      name: <Translate id="staffchat" /> as unknown as string,
       icon: (<MessageCircleMore />),
     },
     {
       id: "reports",
-      name: "Reports",
+      name: <Translate id="reports" /> as unknown as string,
       icon: (<FileWarning />),
     },
     {
       id: "groups",
-      name: "Groups",
+      name: <Translate id="groups" /> as unknown as string,
       icon: (<GroupIcon />),
     },
     {
       id: "settings",
-      name: "Settings",
+      name: <Translate id="settings" /> as unknown as string,
       icon: (<Settings />),
-    },
-    {
-      id: "logout",
-      name: "Logout",
-      icon: (<LogOut />),
     },
   ]
   const changeOption = (option: string) => {
